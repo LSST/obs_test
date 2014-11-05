@@ -21,148 +21,87 @@
 #
 
 import os
-import re
 
-import lsst.daf.base as dafBase
-import lsst.daf.persistence as dafPersist
+import eups
+import lsst.afw.image.utils as afwImageUtils
+from lsst.daf.butlerUtils import CameraMapper
+import lsst.pex.policy as pexPolicy
+from lsst.daf.persistence import ButlerLocation
+from .testCamera import TestCamera
 
 __all__ = ["TestMapper"]
 
-class TestMapper(dafPersist.Mapper):
-    def __init__(self, root=None, calibRoot=None, outputRoot=None, **kwargs):
-        super(TestMapper, self).__init__()
-        self.root = root
-        self.calibRoot = calibRoot
-        if outputRoot is None:
-            outputRoot = root
-        self.outputRoot = outputRoot
-        self.keyDict = dict(
-                skyTile=int,
-                visit=int,
-                raft=str,
-                sensor=str,
-                snap=int,
-                channel=str
-                )
-        self.levels = dict(
-                skyTile=['visit', 'raft', 'sensor', 'snap', 'channel'],
-                visit=['snap', 'raft', 'sensor', 'channel'],
-                raft=['snap', 'sensor', 'channel'],
-                sensor=['snap', 'channel'],
-                snap=['channel']
-                )
-        self.defaultLevel = 'sensor'
-        self.defaultSubLevels = dict(
-                skyTile='sensor',
-                visit='sensor',
-                raft='sensor',
-                sensor='channel'
-                )
-        self.dictList = []
-        for raft in ["0,1", "0,2", "0,3"]:
-            for sensor in ["0,1", "1,0", "1,1"]:
-                for snap in [0, 1]:
-                    for channel in ["0,0", "0,1", "1,0", "1,1"]:
-                        self.dictList.append(dict(
-                            skyTile=1,
-                            visit=85470982,
-                            raft=raft,
-                            sensor=sensor,
-                            snap=snap,
-                            channel=channel
-                            ))
+class TestMapper(CameraMapper):
+    def __init__(self, inputPolicy=None, **kwargs):
+        policyFile = pexPolicy.DefaultPolicyFile("obs_test", "TestMapper.paf", "policy")
+        policy = pexPolicy.Policy(policyFile)
 
+        self.doFootprints = False
+        if inputPolicy is not None:
+            for kw in inputPolicy.paramNames(True):
+                if kw == "doFootprints":
+                    self.doFootprints = True
+                else:
+                    kwargs[kw] = inputPolicy.get(kw)
 
-    def keys(self):
-        return self.keyDict.iterkeys()
+        CameraMapper.__init__(self, policy, policyFile.getRepositoryPath(), **kwargs)
+        self.filterIdMap = {
+                'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5, 'i2': 5}
 
-    def getKeys(self, datasetType, level):
-        keyDict = self.keyDict
-        if level is not None and level in self.levels:
-            keyDict = dict(keyDict)
-            for l in self.levels[level]:
-                if l in keyDict:
-                    del keyDict[l]
-        return keyDict
+        # The LSST Filters from L. Jones 04/07/10
+        afwImageUtils.defineFilter('u', 364.59)
+        afwImageUtils.defineFilter('g', 476.31)
+        afwImageUtils.defineFilter('r', 619.42)
+        afwImageUtils.defineFilter('i', 752.06)
+        afwImageUtils.defineFilter('z', 866.85)
+        afwImageUtils.defineFilter('y', 971.68, alias=['y4']) # official y filter
 
-    @classmethod
-    def getCameraName(cls):
-        return "test"
-    
-    @classmethod
-    def getEupsProductName(cls):
-        return "obs_test"
+        self.camera = TestCamera()
 
-    def getDefaultLevel(self):
-        return self.defaultLevel
+    def _extractDetectorName(self, dataId):
+        return dataId["ccd"]
 
-    def getDefaultSubLevel(self, level):
-        if level in self.defaultSubLevels:
-            return self.defaultSubLevels[level]
-        return None
+    def _defectLookup(self, dataId):
+        """Find the defects for a given CCD.
+        @param dataId (dict) Dataset identifier
+        @return (string) path to the defects file or None if not available
+        """
+        if dataId.get("ccd") != "0":
+            return None
 
-    def validate(self, dataId):
-        for component in ("raft", "sensor", "channel"):
-            if component not in dataId:
-                continue
-            id = dataId[component]
-            if not isinstance(id, str):
-                raise RuntimeError, \
-                        "%s identifier should be type str, not %s: %s" % \
-                        (component.title(), type(id), repr(id))
-            if not re.search(r'^(\d),(\d)$', id):
-                raise RuntimeError, \
-                        "Invalid %s identifier: %s" % (component, repr(id))
-        for component in ("visit", "snap"):
-            if component not in dataId:
-                continue
-            id = dataId[component]
-            if not isinstance(id, int) and not isinstance(id, long):
-                raise RuntimeError, \
-                        "%s identifier should be int or long, not %s: %s" % \
-                        (component.title(), type(id), repr(id))
-            if component == "snap":
-                if id < 0 or id > 1:
-                    raise RuntimeError, \
-                            "Invalid snap identifier: %d" % (id,)
+        obsTestDir = eups.productDir("obs_test")
+        if obsTestDir is None:
+            raise RuntimeError("obs_test must be setup")
 
-        return dataId
+        return os.path.join(obsTestDir, "data", "input", "defects", "defects_c0.fits")
 
-    def map_raw(self, dataId, write=False):
-        loc = "raw-v%(visit)d-E%(snap)03d-r%(raft)s-s%(sensor)s-c%(channel)s.pickle" % dataId
-        loc = os.path.join(self.root, loc)
-        return dafPersist.ButlerLocation(None, "ImageU", "PickleStorage",
-                [loc], dataId)
+    def _computeCcdExposureId(self, dataId):
+        """Compute the 64-bit (long) identifier for a CCD exposure.
 
-    def std_raw(self, object, dataId):
-        return str(object) + "/" + str(dataId['visit'])
+        @param dataId (dict) Data identifier with visit, ccd
+        """
+        visit = dataId['visit']
+        ccd = dataId['ccd']
+        return long(visit*100 + int(ccd))
 
-    def map_processCcd_config(self, dataId, write=False):
-        loc = "config/processCcd.py"
-        loc = os.path.join(self.outputRoot, loc)
-        return dafPersist.ButlerLocation("lsst.obs.test.TestConfig", "Config", "ConfigStorage",
-                [loc], dataId)
+    def bypass_ccdExposureId(self, datasetType, pythonType, location, dataId):
+        return self._computeCcdExposureId(dataId)
 
-    def map_processCcd_metadata(self, dataId, write=False):
-        loc = "md-v%(visit)d-r%(raft)s-s%(sensor)s.boost" % dataId
-        loc = os.path.join(self.outputRoot, loc)
-        return dafPersist.ButlerLocation(
-                "lsst.daf.base.PropertySet", "PropertySet", "BoostStorage",
-                [loc], dataId)
+    def bypass_ccdExposureId_bits(self, datasetType, pythonType, location, dataId):
+        return 41
 
-    def query_raw(self, level, format, dataId):
-        result = set()
-        for d in self.dictList:
-            where = True
-            for k in dataId.iterkeys():
-                if k not in d:
-                    raise RuntimeError("%s not in %s" % (k, repr(d)))
-                if d[k] != dataId[k]:
-                    where = False
-                    break
-            if where:
-                values = []
-                for k in format:
-                    values.append(d[k])
-                result.add(tuple(values))
-        return result
+    def _setCcdExposureId(self, propertyList, dataId):
+        propertyList.set("Computed_ccdExposureId", self._computeCcdExposureId(dataId))
+        return propertyList
+
+    def map_camera(self, dataId, write=False):
+        """Map a camera dataset."""
+        return ButlerLocation()
+
+    def std_camera(self, item, dataId):
+        """Standardize a camera dataset by converting it to a camera object.
+
+        @param[in] item: camera info (an lsst.afw.cameraGeom.CameraConfig)
+        @param[in] dataId: data ID dict
+        """
+        return self.camera
