@@ -1,4 +1,5 @@
 setupRequired(daf_base)
+setupRequired(daf_butlerUtils)
 setupRequired(pex_policy)
 setupRequired(daf_persistence)
 setupRequired(pex_config)
