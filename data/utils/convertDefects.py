@@ -20,8 +20,8 @@ import lsst.afw.geom as afwGeom
 
 lsstDetectorName = "R:2,2 S:0,0"
 lsstDefectsFileName = "defects2200.fits"
-testDefectsPath = "defects1.fits"
-testDetectorName = "S1"
+testDefectsPath = "defects_c0.fits"
+testDetectorName = "0"
 testDetectorSerial = "0000011"
 
 def getBBoxList(path, detectorName):

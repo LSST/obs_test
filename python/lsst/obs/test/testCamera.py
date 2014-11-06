@@ -104,13 +104,13 @@ class TestCamera(Camera):
         # dict of amp-specific data x0Assembled, y0Assembled, x0Raw, y0Raw, flipX, flipY
         ampDataDict = {
             "C00": (  0,    0,   0,    0, False, False),
-            "C10": (509,    0, 514,    0, False, False),
+            "C10": (509,    0, 513,    0, False, False),
             "C01": (0,   1000,   0, 1000,  True,  True),
-            "C11": (509, 1000, 514, 1000,  True,  True),
+            "C11": (509, 1000, 513, 1000,  True,  True),
         }
         xDataExtent = 509 # trimmed
         yDataExtent = 1000
-        xPrescan = 1
+        xPrescan = 0
         xPostscan = 4
         yPrescan = 0
         yPostscan = 0

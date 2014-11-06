@@ -66,14 +66,33 @@ class TestMapper(CameraMapper):
         @param dataId (dict) Dataset identifier
         @return (string) path to the defects file or None if not available
         """
-        if dataId.get("ccd") != "S0":
+        if dataId.get("ccd") != "0":
             return None
 
-        obsTestDir = eups.packageDir("obs_test")
+        obsTestDir = eups.productDir("obs_test")
         if obsTestDir is None:
             raise RuntimeError("obs_test must be setup")
 
-        return os.path.join(obsTestDir, "data", "inputs", "defects", "defects0.fits")
+        return os.path.join(obsTestDir, "data", "input", "defects", "defects_c0.fits")
+
+    def _computeCcdExposureId(self, dataId):
+        """Compute the 64-bit (long) identifier for a CCD exposure.
+
+        @param dataId (dict) Data identifier with visit, ccd
+        """
+        visit = dataId['visit']
+        ccd = dataId['ccd']
+        return long(visit*100 + int(ccd))
+
+    def bypass_ccdExposureId(self, datasetType, pythonType, location, dataId):
+        return self._computeCcdExposureId(dataId)
+
+    def bypass_ccdExposureId_bits(self, datasetType, pythonType, location, dataId):
+        return 41
+
+    def _setCcdExposureId(self, propertyList, dataId):
+        propertyList.set("Computed_ccdExposureId", self._computeCcdExposureId(dataId))
+        return propertyList
 
     def map_camera(self, dataId, write=False):
         """Map a camera dataset."""
