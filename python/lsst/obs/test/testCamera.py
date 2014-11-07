@@ -31,9 +31,12 @@ class TestCamera(Camera):
     There is one ccd with name "0"
     It has four amplifiers with names "00", "01", "10", and "11"
 
-    The camera is modeled after a small portion of the LSST sim camera:
+    The camera is modeled after a small portion of the LSST sim Summer 2012 camera:
     a single detector with four amplifiers, consisting of
     raft 2,2 sensor 0,0, half of channels 0,0 0,1 1,0 and 1,1 (the half closest to the Y centerline)
+
+    Note that the Summer 2012 camera has one very weird feature: the bias region
+    (rawHOverscanBbox) is actually a prescan (appears before the data pixels).
 
     Standard keys are:
     amp: amplifier number: one of 00, 01, 10, 11
@@ -100,6 +103,10 @@ class TestCamera(Camera):
 
     def _makeAmpInfoCatalog(self):
         """Construct an amplifier info catalog
+
+        The LSSTSim S12 amplifiers are unusual in that they start with 4 pixels
+        of usable bias region (which is used to set rawHOverscanBbox, despite the name),
+        followed by the data. There is no other underscan or overscan.
         """
         # dict of amp-specific data x0Assembled, y0Assembled, x0Raw, y0Raw, flipX, flipY
         ampDataDict = {
@@ -110,12 +117,9 @@ class TestCamera(Camera):
         }
         xDataExtent = 509 # trimmed
         yDataExtent = 1000
-        xPrescan = 0
-        xPostscan = 4
-        yPrescan = 0
-        yPostscan = 0
-        xRawExtent = xDataExtent + xPrescan + xPostscan
-        yRawExtent = yDataExtent + yPrescan + yPostscan
+        xBiasExtent = 4
+        xRawExtent = xDataExtent + xBiasExtent
+        yRawExtent = yDataExtent
         gain = 1.7 # amplifier gain in e-/ADU
         # bias = 1000 # amplifier bias
         readNoise = 7.0 # amplifier read noise, in e-
@@ -147,21 +151,15 @@ class TestCamera(Camera):
                 Extent2I(xRawExtent, yRawExtent),
             )
             rawDataBbox = Box2I(
-                Point2I(xPrescan, yPrescan),
+                Point2I(xBiasExtent, 0),
                 Extent2I(xDataExtent, yDataExtent),
             )
             rawHOverscanBbox = Box2I(
-                Point2I(xPrescan + xDataExtent, yPrescan),
-                Extent2I(xPostscan, yDataExtent),
+                Point2I(0, 0),
+                Extent2I(xBiasExtent, yRawExtent),
             )
-            rawVOverscanBbox = Box2I(
-                Point2I(xPrescan, yPrescan + yDataExtent),
-                Extent2I(xDataExtent, yPostscan),
-            )
-            rawPrescanBbox = Box2I( # usable horizontal prescan
-                Point2I(0, yPrescan),
-                Extent2I(xPrescan, yDataExtent),
-            )
+            rawVOverscanBbox = Box2I()
+            rawPrescanBbox = Box2I() # usable horizontal prescan (none)
             if flipX:
                 rawBbox.flipLR(xRawExtent)
                 rawDataBbox.flipLR(xRawExtent)
@@ -195,6 +193,7 @@ class TestCamera(Camera):
             record.setReadoutCorner(readCorner)
             record.setGain(gain)
             record.setReadNoise(readNoise)
+            record.setSaturation(linearityMax)
             record.setLinearityCoeffs([float(val) for val in linearityCoeffs])
             record.setLinearityType(linearityType)
             record.setHasRawInfo(True)
