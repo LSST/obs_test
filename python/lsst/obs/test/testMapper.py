@@ -90,6 +90,15 @@ class TestMapper(CameraMapper):
     def bypass_ccdExposureId_bits(self, datasetType, pythonType, location, dataId):
         return 41
 
+    def validate(self, dataId):
+        ccd = dataId.get("ccd")
+        if ccd and ccd != "0":
+            raise RuntimeError("ccd=%r instead of '0'" % (ccd,))
+        visit = dataId.get("visit")
+        if type(visit) != int:
+            raise RuntimeError("visit=%r; must be an integer")
+        return dataId
+
     def _setCcdExposureId(self, propertyList, dataId):
         propertyList.set("Computed_ccdExposureId", self._computeCcdExposureId(dataId))
         return propertyList
