@@ -1,6 +1,9 @@
 #!/usr/bin/env python2
 from __future__ import absolute_import, division
 """Assemble a set of LSSTSim channel images into one obs_test image
+
+Example of usage:
+./assembleLsstChannels.py <path-to-LSSTSim-repo>/raw/v890104911g_R22_S00/
 """
 # 
 # LSST Data Management System
@@ -29,31 +32,19 @@ import glob
 import re
 
 import numpy
-import pyfits
+
+import lsst.afw.geom as afwGeom
+import lsst.afw.image as afwImage
 
 SizeY = 1000 # number of pixels per amplifier in X direction (Y uses all pixels)
 
 KeysToCopy = (
-    "XTENSION",
-    "CTYPE1",
-    "CRPIX1",
-    "CRVAL1",
-    "CTYPE2",
-    "CRPIX2",
-    "CRVAL2",
-    "CD1_1",
-    "CD1_2",
-    "CD2_1",
-    "CD2_2",
-    "RADESYS",
-    "EQUINOX",
     "EPOCH",
     "OBSID",
     "TAI",
     "MJD-OBS",
     "EXPTIME",
     "DARKTIME",
-    "FILTER",
     "AIRMASS",
 )
 
@@ -68,73 +59,67 @@ def openChannelImage(dirPath, x, y):
     inImageFileName = os.path.basename(inImagePath)
     if re.match(r"imsim_\d\d\d\d\d", inImageFileName):
         # raw images are integer images
-        print "loading as a unsigned integer data"
-        uint = True
+        print "loading %s as raw unsigned integer data" % (inImageFileName,)
+        exposureClass = afwImage.ExposureU
     else:
-        print "loading as float data"
-        uint = False
-    return pyfits.open(inImagePath, uint=uint)
+        print "loading %s as float data" % (inImageFileName,)
+        exposureClass = afwImage.ExposureF
+    return exposureClass(inImagePath)
 
 def assembleImage(dirPath):
     """Make one image by combining half of amplifiers C00, C01, C10, C11 of lsstSim data
     """
-    outHDUList = pyfits.core.HDUList()
+    inExposure = openChannelImage(dirPath, 0, 0)
+    fullInDim = inExposure.getDimensions()
+    yStart = fullInDim[1] - 1000
+    if yStart < 0:
+        raise RuntimeError("channel image unexpectedly small")
+    subDim = afwGeom.Extent2I(fullInDim[0], 1000) # dimensions of the portion of a channel that we use
+    inSubBBox = afwGeom.Box2I(afwGeom.Point2I(0, yStart), subDim)
+    outBBox = afwGeom.Box2I(afwGeom.Point2I(0, 0), subDim * 2)
+    outExposure = inExposure.Factory(outBBox)
 
-    inHDUList = openChannelImage(dirPath, 0, 0)
-    xSubSize, ySubSize = None, None
-    skipFirstHDU = False
+    # copy WCS, filter and other metadata
+    if inExposure.hasWcs():
+        outExposure.setWcs(inExposure.getWcs())
+    outExposure.setFilter(inExposure.getFilter())
+    inMetadata = inExposure.getMetadata()
+    outMetadata = outExposure.getMetadata()
+    for key in KeysToCopy:
+        if inMetadata.exists(key):
+            outMetadata.set(key, inMetadata.get(key))
+    outExposure.setMetadata(outMetadata)
+
     for x in (0, 1):
         for y in (0, 1):
-            inHDUList = openChannelImage(dirPath, x, y)
+            inExposure = openChannelImage(dirPath, x, y)
+            inView = inExposure.Factory(inExposure, inSubBBox)
+            inMIView = inView.getMaskedImage()
 
-            if x == 0 and y == 0:
-                numHDUs = len(inHDUList)
-                if numHDUs in (2, 4):
-                    skipFirstHDU = True
-                elif numHDUs not in (1, 3):
-                    raise RuntimeError("Unknown image type; %s HDUs" % numHDUs)
-                print "found %s HDUs" % (numHDUs,)
+            # rotate the data by 180 degreees for the y = 1 channels
+            if y == 1:
+                inArrList = inMIView.getArrays()
+                for arr in inArrList:
+                    if numpy.any(arr != 0):
+                        arr[:, :] = numpy.array(arr[::-1, ::-1])
 
-            for hduIndex, inHDU in enumerate(inHDUList):
-                if hduIndex == 0 and skipFirstHDU:
-                    outHDUList.append(pyfits.PrimaryHDU())
-                    continue
+            xStart = x * subDim[0]
+            yStart = y * subDim[1]
+            outSubBBox = afwGeom.Box2I(afwGeom.Point2I(xStart, yStart), subDim)
+            outView = outExposure.Factory(outExposure, outSubBBox)
+            outMIView = outView.getMaskedImage()
+            outMIView <<= inMIView
 
-                inImageArr = inHDU.data
-                inImageSubArr = inImageArr[-SizeY:,] # view of top SizeY pixels x full width
-                if xSubSize is None:
-                    xSubSize = inImageSubArr.shape[1]
-                    ySubSize = inImageSubArr.shape[0]
-
-                # flip the data, if need be
-                if y == 1:
-                    inImageSubArr = inImageSubArr[::-1, ::-1]
-                
-                if x == 0 and y == 0:
-                    outArr = numpy.zeros((ySubSize*2, xSubSize*2), dtype=inImageSubArr.dtype)
-                    if hduIndex > 0:
-                        outHDU = pyfits.ImageHDU(data=outArr)
-                    else:
-                        outHDU = pyfits.PrimaryHDU(data=outArr)
-                    outHDUList.append(outHDU)
-                    inHeader = inHDU.header
-                    for key in KeysToCopy:
-                        if key in inHeader:
-                            outHDU.header[key] = (inHeader[key], inHeader.comments[key])
-
-                xStart = x * xSubSize
-                yStart = y * ySubSize
-                outHDUList[hduIndex].data[yStart:yStart+ySubSize, xStart:xStart+xSubSize] = inImageSubArr
-
-    outHDUList.writeto("image.fits")
+    outExposure.writeFits("image.fits")
+    print "wrote assembled data as 'image.fits'"
 
 if __name__ == "__main__":
-    if len(sys.argv) not in (1, 2):
+    if len(sys.argv) != 2:
         print """"Usage: assembleLsstChannels.py [dir]
 
 dir is a directory containing LSSTSim channel images (at least for channels 0,0, 0,1, 1,0 and 1,1),
 and defaults to the current directory.
-Output is written to the current directory as "image.fits" (which must not already exist).
+Output is written to the current directory as "image.fits" (which is overwritten if it exists)
 """
         sys.exit(1)
     if len(sys.argv) == 2:

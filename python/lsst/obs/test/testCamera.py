@@ -21,7 +21,7 @@
 #
 import numpy
 from lsst.afw.geom import Angle, arcseconds, Box2I, Extent2I, Point2I, RadialXYTransform, InvertedXYTransform
-from lsst.afw.table import AmpInfoCatalog, AmpInfoTable, LL, LR, UL, UR
+from lsst.afw.table import AmpInfoCatalog, AmpInfoTable, LL, UR
 from lsst.afw.cameraGeom import Camera, DetectorConfig, FOCAL_PLANE, PUPIL, CameraTransformMap
 from lsst.afw.cameraGeom.cameraFactory import makeDetector
 
@@ -37,6 +37,9 @@ class TestCamera(Camera):
 
     Note that the Summer 2012 camera has one very weird feature: the bias region
     (rawHOverscanBbox) is actually a prescan (appears before the data pixels).
+
+    A raw image has the sky in the same orientation on all amplifier subregions,
+    so no amplifier subregions need their pixels to be flipped.
 
     Standard keys are:
     amp: amplifier number: one of 00, 01, 10, 11
@@ -108,13 +111,6 @@ class TestCamera(Camera):
         of usable bias region (which is used to set rawHOverscanBbox, despite the name),
         followed by the data. There is no other underscan or overscan.
         """
-        # dict of amp-specific data x0Assembled, y0Assembled, x0Raw, y0Raw, flipX, flipY
-        ampDataDict = {
-            "C00": (  0,    0,   0,    0, False, False),
-            "C10": (509,    0, 513,    0, False, False),
-            "C01": (0,   1000,   0, 1000,  True,  True),
-            "C11": (509, 1000, 513, 1000,  True,  True),
-        }
         xDataExtent = 509 # trimmed
         yDataExtent = 1000
         xBiasExtent = 4
@@ -136,75 +132,53 @@ class TestCamera(Camera):
         linUnitsKey = schema.addField('linearityUnits', type=str, size=9)
         self.ampInfoDict = {}
         ampCatalog = AmpInfoCatalog(schema)
-        for ampName, ampData in ampDataDict.iteritems():
-            x0Assembled, y0Assembled, x0Raw, y0Raw, flipX, flipY = ampData
-            record = ampCatalog.addNew()
-            bbox = Box2I(
-                Point2I(x0Assembled, y0Assembled),
-                Extent2I(xDataExtent, yDataExtent),
-            )
+        for ampX in (0, 1):
+            for ampY in (0, 1):
+                record = ampCatalog.addNew()
+                record.setName("%d%d" % (ampX, ampY))
+                record.setBBox(Box2I(
+                    Point2I(ampX * xDataExtent, ampY * yDataExtent),
+                    Extent2I(xDataExtent, yDataExtent),
+                ))
 
-            # for raw bounding boxes, start with them relative to 0,0
-            # flip as needed, then offset by x0Raw, y0Raw
-            rawBbox = Box2I(
-                Point2I(0, 0),
-                Extent2I(xRawExtent, yRawExtent),
-            )
-            rawDataBbox = Box2I(
-                Point2I(xBiasExtent, 0),
-                Extent2I(xDataExtent, yDataExtent),
-            )
-            rawHOverscanBbox = Box2I(
-                Point2I(0, 0),
-                Extent2I(xBiasExtent, yRawExtent),
-            )
-            rawVOverscanBbox = Box2I()
-            rawPrescanBbox = Box2I() # usable horizontal prescan (none)
-            if flipX:
-                rawBbox.flipLR(xRawExtent)
-                rawDataBbox.flipLR(xRawExtent)
-                rawHOverscanBbox.flipLR(xRawExtent)
-                rawVOverscanBbox.flipLR(xRawExtent)
-                rawPrescanBbox.flipLR(xRawExtent)
-            if flipY:
-                rawBbox.flipTB(yRawExtent)
-                rawDataBbox.flipTB(yRawExtent)
-                rawHOverscanBbox.flipTB(yRawExtent)
-                rawVOverscanBbox.flipTB(yRawExtent)
-                rawPrescanBbox.flipTB(yRawExtent)
-            readCorner = {
-                (False, False): LL,
-                (True, False): LR,
-                (False, True): UL,
-                (True, True): UR,
-            }[(bool(flipX), bool(flipY))]
-            xy0RawOffset = Extent2I(x0Raw, y0Raw)
-            rawBbox.shift(xy0RawOffset)
-            rawDataBbox.shift(xy0RawOffset)
-            rawHOverscanBbox.shift(xy0RawOffset)
-            rawVOverscanBbox.shift(xy0RawOffset)
-            rawPrescanBbox.shift(xy0RawOffset)
-            x0Raw = 0
-            y0Raw = 0
+                x0Raw = ampX * xRawExtent
+                y0Raw = ampY * yRawExtent
+                if ampY == 0:
+                    # bias region (which is prescan, in this case) is before the data
+                    readCorner = LL
+                    x0Bias = x0Raw
+                    x0Data = x0Bias + xBiasExtent
+                else:
+                    # bias region (which is prescan, in this case) is after the data
+                    readCorner = UR
+                    x0Data = x0Raw
+                    x0Bias = x0Data + xDataExtent
 
-            record.setBBox(bbox)
-            record.setRawXYOffset(xy0RawOffset)
-            record.setName(ampName)
-            record.setReadoutCorner(readCorner)
-            record.setGain(gain)
-            record.setReadNoise(readNoise)
-            record.setSaturation(linearityMax)
-            record.setLinearityCoeffs([float(val) for val in linearityCoeffs])
-            record.setLinearityType(linearityType)
-            record.setHasRawInfo(True)
-            record.setRawFlipX(flipX)
-            record.setRawFlipY(flipY)
-            record.setRawBBox(rawBbox)
-            record.setRawDataBBox(rawDataBbox)
-            record.setRawHorizontalOverscanBBox(rawHOverscanBbox)
-            record.setRawVerticalOverscanBBox(rawVOverscanBbox)
-            record.setRawPrescanBBox(rawPrescanBbox)
-            record.set(linThreshKey, float(linearityThreshold))
-            record.set(linMaxKey, float(linearityMax))
-            record.set(linUnitsKey, "DN")
+                record.setRawBBox(Box2I(
+                    Point2I(x0Raw, y0Raw),
+                    Extent2I(xRawExtent, yRawExtent),
+                ))
+                record.setRawDataBBox(Box2I(
+                    Point2I(x0Data, y0Raw),
+                    Extent2I(xDataExtent, yDataExtent),
+                ))
+                record.setRawHorizontalOverscanBBox(Box2I(
+                    Point2I(x0Bias, y0Raw),
+                    Extent2I(xBiasExtent, yRawExtent),
+                ))
+                record.setRawXYOffset(Extent2I(x0Raw, y0Raw))
+                record.setReadoutCorner(readCorner)
+                record.setGain(gain)
+                record.setReadNoise(readNoise)
+                record.setSaturation(linearityMax)
+                record.setLinearityCoeffs([float(val) for val in linearityCoeffs])
+                record.setLinearityType(linearityType)
+                record.setHasRawInfo(True)
+                record.setRawFlipX(False)
+                record.setRawFlipY(False)
+                record.setRawVerticalOverscanBBox(Box2I()) # no vertical overscan
+                record.setRawPrescanBBox(Box2I()) # no horizontal prescan
+                record.set(linThreshKey, float(linearityThreshold))
+                record.set(linMaxKey, float(linearityMax))
+                record.set(linUnitsKey, "DN")
         return ampCatalog

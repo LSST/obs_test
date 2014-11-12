@@ -67,10 +67,8 @@ def getBBoxList(path, detectorName):
 def convertLsstBBoxesToTestBBoxes(lsstBBoxList):
     """Read the obs_lsstSim defect list for R:2,2 S:0,0 and convert to a defect list for obs_test
     """
-    testLL = afwGeom.Point2I(0, 1000)
-    testOffset = afwGeom.Extent2I(0, -1000)
-    testExtent = afwGeom.Extent2I(1018, 2000)
-    testSubregion = afwGeom.Box2I(testLL, testExtent)
+    testSubregion = afwGeom.Box2I(afwGeom.Point2I(0, 1000), afwGeom.Extent2I(1018, 2000))
+    testOffset = -afwGeom.Extent2I(testSubregion.getMin())
     testBBoxList = []
     for bbox in lsstBBoxList:
         bbox.clip(testSubregion)
@@ -78,7 +76,7 @@ def convertLsstBBoxesToTestBBoxes(lsstBBoxList):
             continue
         bbox.shift(testOffset)
         testBBoxList.append(bbox)
-#        bboxList.append(afwImage.DefectBase(bbox))
+
     return testBBoxList
 
 def writeDefectsFile(bboxList, path, detectorSerial, detectorName):
