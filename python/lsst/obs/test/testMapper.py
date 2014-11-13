@@ -59,30 +59,26 @@ class TestMapper(CameraMapper):
         self.camera = TestCamera()
 
     def _extractDetectorName(self, dataId):
-        return dataId["ccd"]
+        return "0"
 
     def _defectLookup(self, dataId):
         """Find the defects for a given CCD.
         @param dataId (dict) Dataset identifier
         @return (string) path to the defects file or None if not available
         """
-        if dataId.get("ccd") != "0":
-            return None
-
         obsTestDir = eups.productDir("obs_test")
         if obsTestDir is None:
             raise RuntimeError("obs_test must be setup")
 
-        return os.path.join(obsTestDir, "data", "input", "defects", "defects_c0.fits")
+        return os.path.join(obsTestDir, "data", "input", "defects", "defects.fits")
 
     def _computeCcdExposureId(self, dataId):
         """Compute the 64-bit (long) identifier for a CCD exposure.
 
-        @param dataId (dict) Data identifier with visit, ccd
+        @param dataId (dict) Data identifier with visit
         """
         visit = dataId['visit']
-        ccd = dataId['ccd']
-        return long(visit*100 + int(ccd))
+        return long(visit)
 
     def bypass_ccdExposureId(self, datasetType, pythonType, location, dataId):
         return self._computeCcdExposureId(dataId)
@@ -91,12 +87,9 @@ class TestMapper(CameraMapper):
         return 41
 
     def validate(self, dataId):
-        ccd = dataId.get("ccd")
-        if ccd and ccd != "0":
-            raise RuntimeError("ccd=%r instead of '0'" % (ccd,))
         visit = dataId.get("visit")
-        if type(visit) != int:
-            raise RuntimeError("visit=%r; must be an integer")
+        if visit is not None and not isinstance(visit, int):
+            dataId["visit"] = int(visit)
         return dataId
 
     def _setCcdExposureId(self, propertyList, dataId):

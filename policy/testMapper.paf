@@ -19,7 +19,7 @@ defaultSubLevels: {
 
 exposures: {
     raw: {
-        template:    "raw/raw_v%(visit)d_f%(filter)s_c%(ccd)s.fits.gz"
+        template:    "raw/raw_v%(visit)d_f%(filter)s.fits.gz"
         python:     "lsst.afw.image.DecoratedImageU"
         persistable:         "DecoratedImageU"
         storage:     "FitsStorage"
@@ -28,7 +28,7 @@ exposures: {
         tables:        raw_skyTile
     }
     postISRCCD: {
-        template:    "postISRCCD/postISRCCD_v%(visit)d_f%(filter)s_c%(ccd)s.fits"
+        template:    "postISRCCD/postISRCCD_v%(visit)d_f%(filter)s.fits"
         python:        "lsst.afw.image.ExposureF"
         persistable:        "ExposureF"
         storage:    "FitsStorage"
@@ -37,7 +37,7 @@ exposures: {
         tables:        raw_skyTile
     }
     crDiffim: {
-        template:    "crDiffim/crDiffim_v%(visit)d_f%(filter)s_c%(ccd)s.fits"
+        template:    "crDiffim/crDiffim_v%(visit)d_f%(filter)s.fits"
         python:        "lsst.afw.image.ExposureF"
         persistable:        "ExposureF"
         storage:    "FitsStorage"
@@ -46,7 +46,7 @@ exposures: {
         tables:        raw_skyTile
     }
     visitim: {
-        template:      "visitim/visitim_v%(visit)d_f%(filter)s_c%(ccd)s.fits"
+        template:      "visitim/visitim_v%(visit)d_f%(filter)s.fits"
         python:        "lsst.afw.image.ExposureF"
         persistable:        "ExposureF"
         storage:    "FitsStorage"
@@ -55,7 +55,7 @@ exposures: {
         tables:        raw_skyTile
     }
     calexp: {
-        template:      "calexp/calexp_v%(visit)d_f%(filter)s_c%(ccd)s.fits"
+        template:      "calexp/calexp_v%(visit)d_f%(filter)s.fits"
         python:        "lsst.afw.image.ExposureF"
         persistable:        "ExposureF"
         storage:    "FitsStorage"
@@ -64,7 +64,7 @@ exposures: {
         tables:        raw_skyTile
     }
     wcs: {
-        template:      "wcs/v%(visit)d_f%(filter)s_c%(ccd)s.wcs.fits"
+        template:      "wcs/v%(visit)d_f%(filter)s.wcs.fits"
         python:        "lsst.afw.image.ExposureI"
         persistable:        "ExposureI"
         storage:    "FitsStorage"
@@ -74,7 +74,7 @@ exposures: {
         tables:        "raw_skyTile"
     }
     fcr: {
-        template:      "fcr/v%(visit)d_f%(filter)s_c%(ccd)s.fcr.fits"
+        template:      "fcr/v%(visit)d_f%(filter)s.fcr.fits"
         python:        "lsst.afw.image.ExposureI"
         persistable:        "ExposureI"
         storage:    "FitsStorage"
@@ -87,7 +87,7 @@ exposures: {
 
 calibrations: {
     bias: {
-        template:    "bias/bias_c%(ccd)s.fits.gz"
+        template:    "bias/bias.fits.gz"
         python:        "lsst.afw.image.ExposureF"
         persistable:        "ExposureF"
         storage:    "FitsStorage"
@@ -97,7 +97,7 @@ calibrations: {
         refCols: "filter"
     }
     dark: {
-        template:    "dark/dark_c%(ccd)s.fits.gz"
+        template:    "dark/dark.fits.gz"
         python:        "lsst.afw.image.ExposureF"
         persistable:        "ExposureF"
         storage:    "FitsStorage"
@@ -107,7 +107,7 @@ calibrations: {
         refCols: "filter"
     }
     flat: {
-        template:    "flat/flat_f%(filter)s_c%(ccd)s.fits.gz"
+        template:    "flat/flat_f%(filter)s.fits.gz"
         python:        "lsst.afw.image.ExposureF"
         persistable:        "ExposureF"
         storage:    "FitsStorage"
@@ -119,7 +119,7 @@ calibrations: {
         refCols: "filter"
     }
     fringe: {
-        template:    "fringe/fringe_f%(filter)s_c%(ccd)s.fits.gz"
+        template:    "fringe/fringe_f%(filter)s.fits.gz"
         python:        "lsst.afw.image.ExposureF"
         persistable:        "ExposureF"
         storage:    "FitsStorage"
@@ -214,7 +214,7 @@ datasets: {
         tables:       "raw"
     }
     calexpBackground: {
-        template:      "calexp/v%(visit)d/bkgd-S%(ccd)s.fits"
+        template:      "calexp/v%(visit)d/bkgd.fits"
         python:        "lsst.afw.math.BackgroundList"
         persistable:   "PurePythonClass"
         storage:       "FitsCatalogStorage"
@@ -222,7 +222,7 @@ datasets: {
         tables:        raw_skyTile
     }
     crDiffimSrc: {
-        template:      "crDiffimSrc/v%(visit)d_f%(filter)s_c%(ccd)s.fits"
+        template:      "crDiffimSrc/v%(visit)d_f%(filter)s.fits"
         python:        "lsst.afw.table.SourceCatalog"
         persistable:        "SourceCatalog"
         storage:    "FitsCatalogStorage"
@@ -238,7 +238,7 @@ datasets: {
         tables:        raw_skyTile
     }
     icSrc: {
-        template:      "icSrc/v%(visit)d_f%(filter)s_c%(ccd)s.fits"
+        template:      "icSrc/v%(visit)d_f%(filter)s.fits"
         python:        "lsst.afw.table.SourceCatalog"
         persistable:        "SourceCatalog"
         storage:    "FitsCatalogStorage"
@@ -254,7 +254,7 @@ datasets: {
         tables:        raw_skyTile
     }
     icMatch: {
-        template:      "icMatch/v%(visit)d_f%(filter)s_c%(ccd)s.fits"
+        template:      "icMatch/v%(visit)d_f%(filter)s.fits"
         python:        "lsst.afw.table.BaseCatalog"
         persistable:        "BaseCatalog"
         storage:    "FitsCatalogStorage"
@@ -262,7 +262,7 @@ datasets: {
         tables:        raw_skyTile
     }
     apCorr: {
-        template:      "apCorr/v%(visit)d_f%(filter)s_c%(ccd)s.pickle"
+        template:      "apCorr/v%(visit)d_f%(filter)s.pickle"
         python:        "lsst.meas.algorithms.ApertureCorrection"
         persistable:        "ApertureCorrection"
         storage:    "PickleStorage"
@@ -270,7 +270,7 @@ datasets: {
         tables:        raw_skyTile
     }
     forced_src: {
-        template:      "forced/%(tract)d/v%(visit)d_f%(filter)s_c%(ccd)s.fits"
+        template:      "forced/%(tract)d/v%(visit)d_f%(filter)s.fits"
         python:        "lsst.afw.table.SourceCatalog"
         persistable:        "SourceCatalog"
         storage:    "FitsCatalogStorage"
@@ -286,7 +286,7 @@ datasets: {
         tables:        raw_skyTile
     }
     forced_metadata: {
-        template:      "forced_metadata/v%(visit)d_f%(filter)s_c%(ccd)s.boost"
+        template:      "forced_metadata/v%(visit)d_f%(filter)s.boost"
         python:        "lsst.daf.base.PropertySet"
         persistable:        "PropertySet"
         storage:    "BoostStorage"
@@ -302,7 +302,7 @@ datasets: {
         tables:        raw_skyTile
     }
     src: {
-        template:      "src/v%(visit)d_f%(filter)s_c%(ccd)s.fits"
+        template:      "src/v%(visit)d_f%(filter)s.fits"
         python:        "lsst.afw.table.SourceCatalog"
         persistable:        "SourceCatalog"
         storage:    "FitsCatalogStorage"
@@ -318,7 +318,7 @@ datasets: {
         tables:        raw_skyTile
     }
     modelfits: {
-        template:      "modelfits/v%(visit)d_f%(filter)s_c%(ccd)s.fits"
+        template:      "modelfits/v%(visit)d_f%(filter)s.fits"
         python:        "lsst.meas.multifit.ModelFitCatalog"
         persistable:        "ModelFitCatalog"
         storage:    "FitsCatalogStorage"
@@ -334,7 +334,7 @@ datasets: {
         tables:        raw_skyTile
     }
     deepCoadd_modelfits: {
-        template:      "deepCoadd-results/%(filter)s_t%(tract)d_p%(patch)s/modelfits-%(filter)s-%(tract)d-%(patch)s.fits"
+        template:      "deepCoadd_results/%(filter)s_t%(tract)d_p%(patch)s/modelfits_%(filter)s_%(tract)d_%(patch)s.fits"
         python:        "lsst.meas.multifit.ModelFitCatalog"
         persistable:        "ModelFitCatalog"
         storage:    "FitsCatalogStorage"
@@ -350,7 +350,7 @@ datasets: {
         tables:        raw_skyTile
     }
     deepCoadd_multiModelfits: {
-        template:      "deepCoadd-results/%(filter)s_t%(tract)d_p%(patch)s/multiModelfits-%(filter)s-%(tract)d-%(patch)s.fits"
+        template:      "deepCoadd_results/%(filter)s_t%(tract)d_p%(patch)s/multiModelfits_%(filter)s_%(tract)d_%(patch)s.fits"
         python:        "lsst.meas.multifit.ModelFitCatalog"
         persistable:        "ModelFitCatalog"
         storage:    "FitsCatalogStorage"
@@ -470,7 +470,7 @@ datasets: {
         tables:        raw_skyTile
     }
     processCcd_metadata: {
-        template:      "processCcd_metadata/v%(visit)d_f%(filter)s_c%(ccd)s.boost"
+        template:      "processCcd_metadata/v%(visit)d_f%(filter)s.boost"
         python:        "lsst.daf.base.PropertySet"
         persistable:        "PropertySet"
         storage:    "BoostStorage"
@@ -486,7 +486,7 @@ datasets: {
         tables:        raw_skyTile
     }
     measureCcd_metadata: {
-        template:      "measureCcd_metadata/v%(visit)d_f%(filter)s_c%(ccd)s.boost"
+        template:      "measureCcd_metadata/v%(visit)d_f%(filter)s.boost"
         python:        "lsst.daf.base.PropertySet"
         persistable:        "PropertySet"
         storage:    "BoostStorage"
@@ -519,7 +519,7 @@ datasets: {
         tables:        raw_skyTile
     }
     forcedPhot_metadata: {
-        template:      "forcedPhot_metadata/v%(visit)d_f%(filter)s_c%(ccd)s.boost"
+        template:      "forcedPhot_metadata/v%(visit)d_f%(filter)s.boost"
         python:        "lsst.daf.base.PropertySet"
         persistable:        "PropertySet"
         storage:    "BoostStorage"

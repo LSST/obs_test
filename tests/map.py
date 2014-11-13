@@ -28,6 +28,7 @@ import unittest
 import eups
 import lsst.utils.tests as utilsTests
 from lsst.obs.test import TestMapper
+import lsst.afw.image as afwImage
 
 class TestMapperTestCase(unittest.TestCase):
     """A test case for the test mapper."""
@@ -37,11 +38,8 @@ class TestMapperTestCase(unittest.TestCase):
         if not obsTestDir:
             raise RuntimeError("obs_test is not setup")
         self.input = os.path.join(obsTestDir, "data", "input")
-        self.calib = self.input
-        self.output = os.path.join(obsTestDir, "data", "output")
-        self.mapper = TestMapper(root=self.input,
-                calibRoot=self.calib,
-                outputRoot=self.output)
+        self.output = self.input
+        self.mapper = TestMapper(root=self.input)
 
     def tearDown(self):
         del self.mapper
@@ -64,13 +62,13 @@ class TestMapperTestCase(unittest.TestCase):
         self.assertEqual(loc.getCppType(), "PropertySet")
         self.assertEqual(loc.getStorageName(), "BoostStorage")
         self.assertEqual(loc.getLocations(), [os.path.join(self.output,
-            "processCcd_metadata", "v1_fg_c0.boost")])
+            "processCcd_metadata", "v1_fg.boost")])
         for k, v in dataId.iteritems():
             self.assertEqual(loc.getAdditionalData().get(k), v)
 
     def testKeys(self):
         self.assertEqual(set(self.mapper.keys()),
-                set(['ccd', 'filter', 'patch', 'skyTile', 'tract', 'visit']))
+                set(['filter', 'patch', 'skyTile', 'tract', 'visit']))
 
     def testGetDatasetTypes(self):
         someKeys = set(['raw', 'processCcd_config', 'processCcd_metadata'])
@@ -81,8 +79,6 @@ class TestMapperTestCase(unittest.TestCase):
                 set(["filter"]))
         self.assertEqual(set(self.mapper.getKeys("raw", "visit")),
                 set(["filter", "visit"]))
-        self.assertEqual(set(self.mapper.getKeys("raw", "ccd")),
-                set(["ccd", "filter", "visit"]))
 
     def testGetDefaultLevel(self):
         self.assertEqual(self.mapper.getDefaultLevel(), "ccd")
@@ -105,7 +101,7 @@ class TestMapperTestCase(unittest.TestCase):
             locationList = loc.getLocations()
             self.assertEqual(len(locationList), 1)
             fileName = os.path.basename(locationList[0])
-            self.assertEqual(fileName, "raw_v1_fg_c0.fits.gz")
+            self.assertEqual(fileName, "raw_v1_fg.fits.gz")
             for k, v in dataId.iteritems():
                 self.assertEqual(loc.getAdditionalData().get(k), v)
 
@@ -118,19 +114,26 @@ class TestMapperTestCase(unittest.TestCase):
         self.assertTrue((1, 'g', '0') in tuples)
 
     def testCanStandardize(self):
-#        self.assertEqual(self.mapper.canStandardize("raw"), False) # is True, but why?
+        self.assertEqual(self.mapper.canStandardize("raw"), True)
         self.assertEqual(self.mapper.canStandardize("camera"), True)
         self.assertEqual(self.mapper.canStandardize("processCcd_config"), False)
         self.assertEqual(self.mapper.canStandardize("processCcd_metadata"), False)
 
+    def testStandardizeRaw(self):
+        pathToRaw = os.path.join(self.input, "raw", "raw_v1_fg.fits.gz")
+        rawImage = afwImage.DecoratedImageU(pathToRaw)
+        dataId = dict(visit=1, ccd="0")
+        stdImage = self.mapper.standardize("raw", rawImage, dataId)
+        self.assertTrue(isinstance(stdImage, afwImage.ExposureU))
+
     def testValidate(self):
         for dataId in [
-            dict(visit=1, ccd="0"),
+            dict(visit=1),
+            dict(visit=25),
         ]:
             self.assertEqual(self.mapper.validate(dataId), dataId)
         for dataId in [
-            dict(visit=1, ccd="1"), # the only valid ccd is "0"
-            dict(visit="1", ccd="0"), # visit must be an integer
+            dict(visit="not-an-int", ccd="0"), # visit must be an integer
         ]:
             self.assertRaises(Exception, self.mapper.validate, dataId)
 
