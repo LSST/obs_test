@@ -33,7 +33,7 @@ __all__ = ["TestMapper"]
 
 class TestMapper(CameraMapper):
     def __init__(self, inputPolicy=None, **kwargs):
-        policyFile = pexPolicy.DefaultPolicyFile("obs_test", "TestMapper.paf", "policy")
+        policyFile = pexPolicy.DefaultPolicyFile("obs_test", "testMapper.paf", "policy")
         policy = pexPolicy.Policy(policyFile)
 
         self.doFootprints = False
