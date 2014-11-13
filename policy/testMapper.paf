@@ -133,6 +133,22 @@ calibrations: {
 }
 
 datasets: {
+    test_config: {
+        template:      "config/test.py"
+        python:        "lsst.obs.test.TestConfig"
+        persistable:      "Config"
+        storage:    "ConfigStorage"
+        tables:        raw
+        tables:        raw_skyTile
+    }
+    test_metadata: {
+        template:      "test/v%(visit)d_f%(filter)s.boost"
+        python:        "lsst.daf.base.PropertySet"
+        persistable:        "PropertySet"
+        storage:    "BoostStorage"
+        tables:        raw
+        tables:        raw_skyTile
+    }
     ampExposureId: {
         template:     "ignored"
         # Provide something to import, although we actually return a tuple
