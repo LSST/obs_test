@@ -26,6 +26,7 @@ import lsst.afw.geom as afwGeom
 from lsst.afw.table import AmpInfoCatalog, AmpInfoTable, LL
 from lsst.afw.cameraGeom import NullLinearityType
 from lsst.afw.cameraGeom.cameraFactory import makeDetector
+from lsst.afw.cameraGeom.pupil import PupilFactory
 
 __all__ = ["TestCamera"]
 
@@ -63,7 +64,7 @@ class TestCamera(cameraGeom.Camera):
         cameraTransformMap = cameraGeom.CameraTransformMap(cameraGeom.FOCAL_PLANE,
                                                            {cameraGeom.PUPIL: pupilToFocalPlane})
         detectorList = self._makeDetectorList(pupilToFocalPlane)
-        cameraGeom.Camera.__init__(self, "test", detectorList, cameraTransformMap)
+        cameraGeom.Camera.__init__(self, "test", detectorList, cameraTransformMap, PupilFactory)
 
     def _makeDetectorList(self, focalPlaneToPupil):
         """Make a list of detectors
