@@ -22,6 +22,7 @@
 __all__ = ["TestMapper", "MapperForTestCalexpMetadataObjects"]
 
 import os
+import warnings
 
 import lsst.utils
 import lsst.afw.image.utils as afwImageUtils
@@ -54,13 +55,17 @@ class TestMapper(CameraMapper):
         self.filterIdMap = {
             'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5, 'i2': 5}
 
-        # The LSST Filters from L. Jones 04/07/10
-        afwImageUtils.defineFilter('u', 364.59)
-        afwImageUtils.defineFilter('g', 476.31)
-        afwImageUtils.defineFilter('r', 619.42)
-        afwImageUtils.defineFilter('i', 752.06)
-        afwImageUtils.defineFilter('z', 866.85)
-        afwImageUtils.defineFilter('y', 971.68, alias=['y4'])  # official y filter
+        with warnings.catch_warnings():
+            # surpress Filter warnings; we already know this is deprecated
+            warnings.simplefilter('ignore', category=FutureWarning)
+
+            # The LSST Filters from L. Jones 04/07/10
+            afwImageUtils.defineFilter('u', 364.59)
+            afwImageUtils.defineFilter('g', 476.31)
+            afwImageUtils.defineFilter('r', 619.42)
+            afwImageUtils.defineFilter('i', 752.06)
+            afwImageUtils.defineFilter('z', 866.85)
+            afwImageUtils.defineFilter('y', 971.68, alias=['y4'])  # official y filter
 
     def _extractDetectorName(self, dataId):
         return "0"
@@ -140,13 +145,18 @@ class MapperForTestCalexpMetadataObjects(lsst.obs.base.CameraMapper):
             policy, repositoryDir=root, root=root, parentRegistry=None, repositoryCfg=None)
         self.filterIdMap = {
             'u': 0, 'g': 1, 'r': 2, 'i': 3, 'z': 4, 'y': 5, 'i2': 5}
-        # The LSST Filters from L. Jones 04/07/10
-        afwImageUtils.defineFilter('u', 364.59)
-        afwImageUtils.defineFilter('g', 476.31)
-        afwImageUtils.defineFilter('r', 619.42)
-        afwImageUtils.defineFilter('i', 752.06)
-        afwImageUtils.defineFilter('z', 866.85)
-        afwImageUtils.defineFilter('y', 971.68, alias=['y4'])  # official y filter
+
+        with warnings.catch_warnings():
+            # surpress Filter warnings; we already know this is deprecated
+            warnings.simplefilter('ignore', category=FutureWarning)
+
+            # The LSST Filters from L. Jones 04/07/10
+            afwImageUtils.defineFilter('u', 364.59)
+            afwImageUtils.defineFilter('g', 476.31)
+            afwImageUtils.defineFilter('r', 619.42)
+            afwImageUtils.defineFilter('i', 752.06)
+            afwImageUtils.defineFilter('z', 866.85)
+            afwImageUtils.defineFilter('y', 971.68, alias=['y4'])  # official y filter
 
     def _makeCamera(self, policy, repositoryDir):
         """Normally this makes a camera. For composite testing, we don't need a camera.
