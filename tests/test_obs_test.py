@@ -84,7 +84,8 @@ class TestObsTest(lsst.obs.base.tests.ObsTests, lsst.utils.tests.TestCase):
                               )
 
         keys = set(('filter', 'name', 'patch', 'tract', 'visit', 'pixel_id', 'subfilter',
-                    'fgcmcycle', 'numSubfilters', 'label', 'detector', 'expId', 'subdir'))
+                    'fgcmcycle', 'numSubfilters', 'label', 'detector', 'expId', 'subdir',
+                    'dayObs', 'seqNum'))
         query_format = ["visit", "filter"]
         queryMetadata = (({'visit': 1}, [(1, 'g')]),
                          ({'visit': 2}, [(2, 'g')]),
