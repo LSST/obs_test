@@ -28,9 +28,9 @@ import contextlib
 
 import lsst.utils
 import lsst.utils.tests
-import lsst.log as lsstLog
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
+from lsst.pipe.base.task_logging import getTaskLogger
 
 ObsTestDir = lsst.utils.getPackageDir("obs_test")
 DataPath = os.path.realpath(os.path.join(ObsTestDir, "data", "input"))
@@ -295,13 +295,13 @@ class ArgumentParserTestCase(unittest.TestCase):
     def testLogLevel(self):
         """Test --loglevel"""
         for logLevel in ("trace", "debug", "Info", "WARN", "eRRoR", "fatal"):
-            intLevel = getattr(lsstLog.Log, logLevel.upper())
-            print("testing logLevel=%r" % (logLevel,))
             namespace = self.ap.parse_args(
                 config=self.config,
                 args=[DataPath, "--loglevel", logLevel],
             )
-            self.assertEqual(namespace.log.getLevel(), intLevel)
+            intLevel = getattr(namespace.log, logLevel.upper())
+            print("testing logLevel=%r" % (logLevel,))
+            self.assertEqual(namespace.log.getEffectiveLevel(), intLevel)
             self.assertFalse(hasattr(namespace, "loglevel"))
 
             bazLevel = "TRACE"
@@ -313,9 +313,10 @@ class ArgumentParserTestCase(unittest.TestCase):
                       "baz=%s" % bazLevel,  # test that later values override earlier values
                       ],
             )
-            self.assertEqual(namespace.log.getLevel(), intLevel)
-            self.assertEqual(lsstLog.Log.getLogger("foo.bar").getLevel(), intLevel)
-            self.assertEqual(lsstLog.Log.getLogger("baz").getLevel(), getattr(lsstLog.Log, bazLevel))
+            self.assertEqual(namespace.log.getEffectiveLevel(), intLevel)
+            self.assertEqual(getTaskLogger("foo.bar").getEffectiveLevel(), intLevel)
+            self.assertEqual(getTaskLogger("baz").getEffectiveLevel(),
+                             getattr(getTaskLogger(), bazLevel))
 
         with self.assertRaises(SystemExit):
             self.ap.parse_args(config=self.config,
