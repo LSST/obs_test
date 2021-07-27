@@ -27,7 +27,7 @@ import tempfile
 import lsst.utils
 import lsst.pipe.base as pipeBase
 import lsst.obs.test
-from lsst.log import Log
+import logging
 
 ObsTestDir = lsst.utils.getPackageDir("obs_test")
 DataPath = os.path.join(ObsTestDir, "data", "input")
@@ -120,14 +120,17 @@ class CmdLineTaskTestCase(unittest.TestCase):
         """
         config = ExampleTask.ConfigClass()
         config.floatField = -99.9
-        log = Log.getLogger("cmdLineTask")
+        log = logging.getLogger("cmdLineTask")
         retVal = ExampleTask.parseAndRun(
             args=[DataPath, "--output", self.outPath, "--id", "visit=2"],
             config=config,
             log=log
         )
         self.assertEqual(retVal.parsedCmd.config.floatField, -99.9)
-        self.assertIs(retVal.parsedCmd.log, log)
+
+        # The logger class may have been changed but the logger name
+        # should still match.
+        self.assertEqual(retVal.parsedCmd.log.name, log.name)
 
     def testDoReturnResults(self):
         """Test the doReturnResults flag
