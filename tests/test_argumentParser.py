@@ -30,7 +30,7 @@ import lsst.utils
 import lsst.utils.tests
 import lsst.pex.config as pexConfig
 import lsst.pipe.base as pipeBase
-from lsst.pipe.base.task_logging import getTaskLogger
+from lsst.utils.logging import getLogger
 
 ObsTestDir = lsst.utils.getPackageDir("obs_test")
 DataPath = os.path.realpath(os.path.join(ObsTestDir, "data", "input"))
@@ -314,9 +314,9 @@ class ArgumentParserTestCase(unittest.TestCase):
                       ],
             )
             self.assertEqual(namespace.log.getEffectiveLevel(), intLevel)
-            self.assertEqual(getTaskLogger("foo.bar").getEffectiveLevel(), intLevel)
-            self.assertEqual(getTaskLogger("baz").getEffectiveLevel(),
-                             getattr(getTaskLogger(), bazLevel))
+            self.assertEqual(getLogger("foo.bar").getEffectiveLevel(), intLevel)
+            self.assertEqual(getLogger("baz").getEffectiveLevel(),
+                             getattr(getLogger(), bazLevel))
 
         with self.assertRaises(SystemExit):
             self.ap.parse_args(config=self.config,
