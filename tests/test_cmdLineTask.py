@@ -27,6 +27,7 @@ import tempfile
 import lsst.utils
 import lsst.pipe.base as pipeBase
 import lsst.obs.test
+from lsst.utils.timer import timeMethod
 import logging
 
 ObsTestDir = lsst.utils.getPackageDir("obs_test")
@@ -43,7 +44,7 @@ class ExampleTask(pipeBase.CmdLineTask):
         self.numProcessed = 0
         self.metadata.set("numProcessed", self.numProcessed)
 
-    @pipeBase.timeMethod
+    @timeMethod
     def runDataRef(self, dataRef):
         if self.config.doFail:
             raise pipeBase.TaskError("Failed by request: config.doFail is true")
