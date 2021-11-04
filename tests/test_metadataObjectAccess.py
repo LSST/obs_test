@@ -85,24 +85,7 @@ class TestCalexpMetadataObjects(lsst.utils.tests.TestCase):
         self.assertIsInstance(visitInfo, lsst.afw.image.VisitInfo)
         self.assertIsInstance(filt, lsst.afw.image.Filter)
 
-        self.assertEqual(visitInfo.getExposureId(), calexp.getInfo().getVisitInfo().getExposureId())
-        self.assertEqual(visitInfo.getExposureTime(), calexp.getInfo().getVisitInfo().getExposureTime())
-        self.nanSafeAssertEqual(visitInfo.getDarkTime(), calexp.getInfo().getVisitInfo().getDarkTime())
-        self.assertEqual(visitInfo.getDate(), calexp.getInfo().getVisitInfo().getDate())
-        self.nanSafeAssertEqual(visitInfo.getUt1(), calexp.getInfo().getVisitInfo().getUt1())
-        self.nanSafeAssertEqual(visitInfo.getEra(), calexp.getInfo().getVisitInfo().getEra())
-        self.assertEqual(visitInfo.getBoresightRaDec(), calexp.getInfo().getVisitInfo().getBoresightRaDec())
-        self.assertEqual(visitInfo.getBoresightAzAlt(), calexp.getInfo().getVisitInfo().getBoresightAzAlt())
-        self.assertEqual(visitInfo.getBoresightAirmass(),
-                         calexp.getInfo().getVisitInfo().getBoresightAirmass())
-        self.nanSafeAssertEqual(visitInfo.getBoresightRotAngle(),
-                                calexp.getInfo().getVisitInfo().getBoresightRotAngle())
-        self.assertEqual(visitInfo.getRotType(), calexp.getInfo().getVisitInfo().getRotType())
-        self.assertEqual(visitInfo.getObservatory(), calexp.getInfo().getVisitInfo().getObservatory())
-        self.assertEqual(visitInfo.getWeather(), calexp.getInfo().getVisitInfo().getWeather())
-        self.nanSafeAssertEqual(visitInfo.getLocalEra(), calexp.getInfo().getVisitInfo().getLocalEra())
-        self.nanSafeAssertEqual(visitInfo.getBoresightHourAngle(),
-                                calexp.getInfo().getVisitInfo().getBoresightHourAngle())
+        self.assertEqual(visitInfo, calexp.info.getVisitInfo())
 
 
 class MemoryTester(lsst.utils.tests.MemoryTestCase):
