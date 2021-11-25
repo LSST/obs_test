@@ -42,7 +42,7 @@ class ExampleTask(pipeBase.CmdLineTask):
         pipeBase.CmdLineTask.__init__(self, *args, **kwargs)
         self.dataRefList = []
         self.numProcessed = 0
-        self.metadata.set("numProcessed", self.numProcessed)
+        self.metadata["numProcessed"] = self.numProcessed
 
     @timeMethod
     def runDataRef(self, dataRef):
@@ -50,7 +50,7 @@ class ExampleTask(pipeBase.CmdLineTask):
             raise pipeBase.TaskError("Failed by request: config.doFail is true")
         self.dataRefList.append(dataRef)
         self.numProcessed += 1
-        self.metadata.set("numProcessed", self.numProcessed)
+        self.metadata["numProcessed"] = self.numProcessed
         return pipeBase.Struct(
             numProcessed=self.numProcessed,
         )
